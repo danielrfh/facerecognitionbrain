@@ -5,14 +5,14 @@ const FaceRecognition = ({ imageUrl, box }) => {
   return (
     <div className="center ma">
       <div className="absolute mt2">
-        <img
+        <img // Displays the image in the center of the viewport
           id="inputImage"
           src={imageUrl}
           alt=""
           width="500px"
           height="auto"
         />
-        <div
+        <div //Displays a box over the recognized face
           className="bounding-box"
           style={{
             top: box.topRow,

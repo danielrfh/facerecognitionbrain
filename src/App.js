@@ -8,7 +8,7 @@ import ImageLinkForm from "./components/ImageLinkForm/ImageLinkForm";
 import Rank from "./components/Rank/Rank";
 import ParticlesBg from "particles-bg";
 import "./App.css";
-import { click } from "@testing-library/user-event/dist/click";
+// import { click } from "@testing-library/user-event/dist/click";
 
 const returnClarifaiRequestOptions = (imageUrl) => {
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +53,7 @@ const returnClarifaiRequestOptions = (imageUrl) => {
   return requestOptions;
 };
 
+// Initialize all states to be used across all Components
 const initialState = {
   input: "",
   imageUrl: "",
@@ -86,15 +87,18 @@ class App extends Component {
     });
   };
 
+  // The API response contains the % of where the face is located in the
+  // image. Therefore we need to multiply it in order to find the pixel
+  // coordinates for the box.
   calculateFaceLocation = (data) => {
     const clarifaiFace =
       data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById("inputImage");
     const width = Number(image.width);
     const height = Number(image.height);
-    console.log(width);
-    console.log(height);
-    console.log(clarifaiFace);
+    // console.log(width);
+    // console.log(height);
+    // console.log(clarifaiFace);
     return {
       leftCol: clarifaiFace.left_col * width,
       topRow: clarifaiFace.top_row * height,
@@ -103,11 +107,16 @@ class App extends Component {
     };
   };
 
+  // Function that gets the coordinates from of the calculated face
+  // location and sets the state of box with it. This is used in the
+  // FaceRecognition Component.
   displayFaceBox = (box) => {
     // console.log(box);
     this.setState({ box: box });
   };
 
+  // Create a function that receives an event when the input changes on
+  //the ImageLinkForm Component
   onInputChange = (event) => {
     // console.log(event.target.value);
     this.setState({ input: event.target.value });
@@ -119,17 +128,28 @@ class App extends Component {
 
     // Change these to whatever model and image URL you want to use
     const MODEL_ID = "face-detection";
-    // app.models.predict(MODEL_ID, this.state.input)
+    // app.models.predict(MODEL_ID, this.state.input) <- Old API
+
     // NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
     // https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
     // this will default to the latest version_id
 
+    // Call Clarifai API using the URL on this.state.input
     fetch(
       "https://api.clarifai.com/v2/models/" + MODEL_ID + "/outputs",
       returnClarifaiRequestOptions(this.state.input)
     )
+      // Fetch does not directly return the JSON response body but instead
+      // returns a promise that resolves with a Response object.
       .then((response) => {
         // console.log(response);
+
+        // The Response object, in turn, does not directly contain the
+        // actual JSON response body but is instead a representation of
+        // the entire HTTP response. So, to extract the JSON body content
+        // from the Response object, we use the json() method, which
+        // returns a second promise that resolves with the result of
+        // parsing the response body text as JSON
         response.json().then((data) => {
           // Access the object in the 'data' variable
           // console.log(this.calculateFaceLocation(data));
@@ -167,22 +187,27 @@ class App extends Component {
     const { isSignedIn, imageUrl, route, box } = this.state;
     return (
       <div className="App">
-        <ParticlesBg type="cobweb" bg={true} />
-        <Navigation
+        <ParticlesBg type="cobweb" bg={true} /> {/* Used for background */}
+        <Navigation // Create a Navigation Component is where we have
+          // the signout
           isSignedIn={isSignedIn}
           onRouteChange={this.onRouteChange}
         />
         {route === "home" ? (
           <div>
-            <Logo />
+            <Logo /> {/* Create a Logo Component*/}
+            {/* Create a Rank Component to compare all the users */}
             <Rank
               name={this.state.user.name}
               entries={this.state.user.entries}
             />
-            <ImageLinkForm
-              onInputChange={this.onInputChange}
+            <ImageLinkForm // Create an input form Component for the image URL
+              onInputChange={this.onInputChange} // Props for the Component
               onButtonSubmit={this.onButtonSubmit}
             />
+            {/* Create a Component to display the image from imageUrl
+            and draw a box in the recognized face with the coordinates 
+            (box) from the API */}
             <FaceRecognition box={box} imageUrl={imageUrl} />
           </div>
         ) : route === "signin" ? (
