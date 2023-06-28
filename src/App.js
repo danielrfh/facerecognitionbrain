@@ -10,49 +10,6 @@ import ParticlesBg from "particles-bg";
 import "./App.css";
 // import { click } from "@testing-library/user-event/dist/click";
 
-const returnClarifaiRequestOptions = (imageUrl) => {
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  // In this section, we set the user authentication, user and app ID, model details, and the URL
-  // of the image we want as an input. Change these strings to run your own example.
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Your PAT (Personal Access Token) can be found in the portal under Authentification
-  const PAT = "d7bc774fde8a4850af4ac59501f89928";
-  // Specify the correct user_id/app_id pairings
-  // Since you're making inferences outside your app's scope
-  const USER_ID = "danielrfh";
-  const APP_ID = "my-first-application-twtjtb";
-
-  const IMAGE_URL = imageUrl;
-  ///////////////////////////////////////////////////////////////////////////////////
-  // YOU DO NOT NEED TO CHANGE ANYTHING BELOW THIS LINE TO RUN THIS EXAMPLE
-  ///////////////////////////////////////////////////////////////////////////////////
-  const raw = JSON.stringify({
-    user_app_id: {
-      user_id: USER_ID,
-      app_id: APP_ID,
-    },
-    inputs: [
-      {
-        data: {
-          image: {
-            url: IMAGE_URL,
-          },
-        },
-      },
-    ],
-  });
-  const requestOptions = {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: "Key " + PAT,
-    },
-    body: raw,
-  };
-  return requestOptions;
-};
-
 // Initialize all states to be used across all Components
 const initialState = {
   input: "",
@@ -126,49 +83,26 @@ class App extends Component {
     // console.log("click");
     this.setState({ imageUrl: this.state.input });
 
-    // Change these to whatever model and image URL you want to use
-    const MODEL_ID = "face-detection";
-    // app.models.predict(MODEL_ID, this.state.input) <- Old API
-
-    // NOTE: MODEL_VERSION_ID is optional, you can also call prediction with the MODEL_ID only
-    // https://api.clarifai.com/v2/models/{YOUR_MODEL_ID}/outputs
-    // this will default to the latest version_id
-
-    // Call Clarifai API using the URL on this.state.input
-    fetch(
-      "https://api.clarifai.com/v2/models/" + MODEL_ID + "/outputs",
-      returnClarifaiRequestOptions(this.state.input)
-    )
-      // Fetch does not directly return the JSON response body but instead
-      // returns a promise that resolves with a Response object.
+    fetch("http://localhost:4000/imageurl", {
+      method: "post",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: this.state.input }),
+    })
+      .then((response) => response.json())
       .then((response) => {
-        // console.log(response);
-
-        // The Response object, in turn, does not directly contain the
-        // actual JSON response body but is instead a representation of
-        // the entire HTTP response. So, to extract the JSON body content
-        // from the Response object, we use the json() method, which
-        // returns a second promise that resolves with the result of
-        // parsing the response body text as JSON
-        response.json().then((data) => {
-          // Access the object in the 'data' variable
-          // console.log(this.calculateFaceLocation(data));
-          if (data) {
-            fetch("http://localhost:4000/image", {
-              method: "put",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: this.state.user.id }),
+        if (response) {
+          fetch("http://localhost:4000/image", {
+            method: "put",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: this.state.user.id }),
+          })
+            .then((response) => response.json())
+            .then((count) => {
+              this.setState(Object.assign(this.state.user, { entries: count }));
             })
-              .then((response) => response.json())
-              .then((count) => {
-                this.setState(
-                  Object.assign(this.state.user, { entries: count })
-                );
-              })
-              .catch(console.log);
-          }
-          this.displayFaceBox(this.calculateFaceLocation(data));
-        });
+            .catch(console.log);
+        }
+        this.displayFaceBox(this.calculateFaceLocation(response));
       })
       // .then((result) => console.log(result))
       .catch((error) => console.log("error", error));
